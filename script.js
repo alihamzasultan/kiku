@@ -59,7 +59,6 @@ function changeVideo(path) {
     }, 300); // Adjust delay for a smoother transition (300ms)
 }
 
-
 // Load the default video on page load with looping enabled
 window.onload = function () {
     videoCharacter.src = defaultVideoPath;
