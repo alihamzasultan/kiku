@@ -261,8 +261,16 @@ if ('webkitSpeechRecognition' in window) {
     };
 }
 
-function toggleMic() {
+async function toggleMic() {
     const listeningAnimation = document.getElementById('listening-animation');
+
+    // Check if microphone access has been granted
+    const permission = await navigator.permissions.query({ name: 'microphone' });
+    
+    if (permission.state !== 'granted') {
+        alert('Microphone access is required to use this feature. Please grant access and try again.');
+        return; // Exit if microphone access is not granted
+    }
 
     if (recognizing) {
         recognition.stop(); // Manually stop recognition
@@ -276,6 +284,7 @@ function toggleMic() {
         listeningAnimation.style.display = 'block'; // Show animation
     }
 }
+
 
 
 // Ensure voices are loaded before using them
