@@ -292,6 +292,7 @@ function welcomeUser() {
     welcomeUtterance.pitch = 1.2; // Slightly higher pitch
     welcomeUtterance.rate = 1.0;   // Normal speaking rate
     document.getElementById('welcome-button').style.display = 'none';
+     document.getElementById('background-content').classList.remove('blurred-background');
 
     // Change to the chatbot interaction video when speaking starts
     welcomeUtterance.onstart = function () {
