@@ -14,7 +14,7 @@ if (!sessionId) {
 
 async function sendQueryToServer(queryText) {
     try {
-        const response = await fetch('https://animation-bot-production.up.railway.app/chat', {
+        const response = await fetch('http://localhost:3000/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -199,8 +199,16 @@ const micButton = document.getElementById('mic-button');
 // Function to toggle the microphone and start speech recognition after interruption
 let recognizing = false;
 
-function toggleMic() {
+async function toggleMic() {
     const listeningAnimation = document.getElementById('listening-animation');
+
+    // Check if microphone access has been granted
+    const permission = await navigator.permissions.query({ name: 'microphone' });
+    
+    if (permission.state !== 'granted') {
+        alert('Microphone access is required to use this feature. Please grant access and try again.');
+        return; // Exit if microphone access is not granted
+    }
 
     if (recognizing) {
         recognition.stop(); // Manually stop recognition
@@ -213,43 +221,8 @@ function toggleMic() {
         document.getElementById('micButton').textContent = 'Stop Listening';
         listeningAnimation.style.display = 'block'; // Show animation
     }
-
-    // Handle recognition end (restart unless stopped manually)
-
-
-    // Handle recognition errors
-    recognition.onerror = (event) => {
-        if (event.error === 'no-speech') {
-            console.log('No speech detected. Restarting...');
-            if (recognizing) {
-                recognition.stop();  // Ensure recognition is stopped first
-                recognition.onend = () => {  // Wait for the stop event before starting again
-                    recognition.start(); // Restart if no speech is detected and it's not already running
-                };
-            }
-        } else if (event.error === 'not-allowed') {
-            console.error('Permission to use microphone not granted.');
-            recognition.stop();  // Stop recognition when mic is not allowed
-            recognizing = false; // Update recognizing state
-            document.getElementById('micButton').textContent = 'Start Listening';
-            listeningAnimation.style.display = 'none'; // Hide the animation
-        } else if (event.error === 'network') {
-            console.error('Network error. Please check your connection.');
-            recognition.stop();  // Stop recognition on network error
-            recognizing = false; // Update recognizing state
-            document.getElementById('micButton').textContent = 'Start Listening';
-            listeningAnimation.style.display = 'none'; // Hide the animation
-        } else {
-            console.error('Speech recognition error:', event.error);
-            recognition.stop();  // Stop recognition in case of other errors
-            recognizing = false; // Update recognizing state
-            document.getElementById('micButton').textContent = 'Start Listening';
-            listeningAnimation.style.display = 'none'; // Hide the animation
-        }
-    };
-    
-    
 }
+
 
 
 
