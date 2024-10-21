@@ -268,7 +268,7 @@ window.speechSynthesis.onvoiceschanged = getVoices;
 
 // Function to say the welcome message with video change
 function welcomeUser() {
-    const welcomeText = "Hello there, my name is Kiki the Rabbit , Whats Your Name?";
+    const welcomeText = "Hello there, my name is Kiki the Rabbit, What's Your Name?";
     let welcomeUtterance = new SpeechSynthesisUtterance(welcomeText);
 
     // Set voice to a female voice or adjust pitch/rate for effect
@@ -276,13 +276,29 @@ function welcomeUser() {
     welcomeUtterance.voice = femaleVoice;
     welcomeUtterance.pitch = 1.2; // Slightly higher pitch
     welcomeUtterance.rate = 1.0;   // Normal speaking rate
+
     document.getElementById('welcome-button').style.display = 'none';
     document.getElementById('background-content').classList.remove('blurred-background');
 
     // Change to the chatbot interaction video when speaking starts
     welcomeUtterance.onstart = function () {
-        changeVideo('video.mp4'); // Change to the interaction video
-        isSpeaking = true; // Chatbot starts speaking
+        // Set up the video change with the loading check
+        const interactionVideoPath = 'video.mp4';
+        
+        // Change the video source and wait for it to load
+        videoCharacter.src = interactionVideoPath;
+
+        // Wait for the video to be ready before playing and changing the video
+        videoCharacter.addEventListener('canplaythrough', function onVideoReady() {
+            // Start playing the video and remove the event listener to avoid multiple triggers
+            changeVideo(interactionVideoPath);
+            isSpeaking = true; // Chatbot starts speaking
+
+            // Remove the listener once the video is ready
+            videoCharacter.removeEventListener('canplaythrough', onVideoReady);
+        });
+
+        videoCharacter.load(); // Load the new video
     };
 
     // Change back to the default video when speech ends
@@ -294,6 +310,7 @@ function welcomeUser() {
     // Start speaking the welcome message
     speechSynthesis.speak(welcomeUtterance);
 }
+
 
 // Add event listener to the welcome button
 document.getElementById('welcome-button').addEventListener('click', welcomeUser);
