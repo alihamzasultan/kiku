@@ -14,7 +14,7 @@ if (!sessionId) {
 
 async function sendQueryToServer(queryText) {
     try {
-        const response = await fetch('http://localhost:3000/chat', {
+        const response = await fetch('https://animation-bot-production.up.railway.app/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -40,22 +40,14 @@ function changeVideo(path) {
     // Fade out the current video
     videoCharacter.style.opacity = 0;
 
-    // Pause the video if it's currently playing
-    videoCharacter.pause();
-
     setTimeout(() => {
         // Change the video source after the fade-out
         videoCharacter.src = path;
         videoCharacter.load();  // Reload the video
+        videoCharacter.play();  // Play the new video
 
-        // Wait for the video to be ready before playing and fading it in
-        videoCharacter.addEventListener('canplaythrough', function playNewVideo() {
-            videoCharacter.play();  // Play the new video
-            videoCharacter.style.opacity = 1;  // Fade in the new video
-
-            // Remove the event listener after it fires to avoid triggering multiple times
-            videoCharacter.removeEventListener('canplaythrough', playNewVideo);
-        });
+        // Fade in the new video after changing the source
+        videoCharacter.style.opacity = 1;
     }, 300); // Adjust delay for a smoother transition (300ms)
 }
 
@@ -205,18 +197,72 @@ document.getElementById('chat-input').addEventListener('keydown', function (even
 const micButton = document.getElementById('mic-button');
 
 // Function to toggle the microphone and start speech recognition after interruption
+
+
+
+
+
+let recognition;
 let recognizing = false;
 
-async function toggleMic() {
-    const listeningAnimation = document.getElementById('listening-animation');
+if ('webkitSpeechRecognition' in window) {
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
 
-    // Check if microphone access has been granted
-    const permission = await navigator.permissions.query({ name: 'microphone' });
-    
-    if (permission.state !== 'granted') {
-        alert('Microphone access is required to use this feature. Please grant access and try again.');
-        return; // Exit if microphone access is not granted
-    }
+    recognition.onresult = function (event) {
+        let transcript = event.results[event.resultIndex][0].transcript.trim();
+
+        // Only proceed if the transcript has valid input (non-empty string)
+        if (transcript.length > 0) {
+            document.getElementById("chat-input").value = transcript;
+            let message = transcript; // Captured message
+            document.getElementById('chat-output').innerHTML += `<p>User: ${message}</p>`;
+
+            // Simulate clicking the send button to handle chatbot response
+            document.getElementById('send-button').click();
+        } else {
+            console.log('No valid speech detected, skipping chatbot response.');
+        }
+    };
+
+    // Automatically restart the mic if it stops (unless manually stopped)
+    recognition.onend = function () {
+        if (recognizing) {
+            recognition.start(); // Automatically restart the mic
+            console.log("Microphone restarted");
+        } else {
+            document.getElementById('micButton').textContent = 'Start Listening';
+        }
+    };
+
+    // Handle recognition errors
+    recognition.onerror = (event) => {
+        if (event.error === 'no-speech') {
+            console.log('No speech detected. Restarting...');
+            recognition.stop();  // Ensure recognition is stopped first
+            recognition.onend = () => {  // Restart after stopping
+                recognition.start(); 
+            };
+        } else if (event.error === 'not-allowed') {
+            console.error('Permission to use microphone not granted.');
+            recognition.stop();  // Stop recognition when mic is not allowed
+            recognizing = false;
+        } else if (event.error === 'network') {
+            console.error('Network error. Please check your connection.');
+            recognition.stop();
+            recognizing = false;
+        } else {
+            console.error('Speech recognition error:', event.error);
+            recognition.stop();
+            recognizing = false;
+        }
+    };
+}
+
+function toggleMic() {
+    const listeningAnimation = document.getElementById('listening-animation');
 
     if (recognizing) {
         recognition.stop(); // Manually stop recognition
@@ -232,43 +278,12 @@ async function toggleMic() {
 }
 
 
-
-
-
-let recognition;
-
-if ('webkitSpeechRecognition' in window) {
-    recognition = new webkitSpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = function (event) {
-        let transcript = event.results[event.resultIndex][0].transcript.trim();
-        document.getElementById("chat-input").value = transcript;
-        let message = transcript; // Captured message
-        document.getElementById('chat-output').innerHTML += `<p>User: ${message}</p>`;
-
-        // Simulate clicking the send button to handle chatbot response
-        document.getElementById('send-button').click();
-    };
-
-    recognition.onerror = function (event) {
-        console.log('Error occurred in recognition: ' + event.error);
-    };
-
-    recognition.onend = function () {
-        recognizing = false;
-        document.getElementById('micButton').textContent = 'Start Listening';
-    };
-}
-
 // Ensure voices are loaded before using them
 window.speechSynthesis.onvoiceschanged = getVoices;
 
 // Function to say the welcome message with video change
 function welcomeUser() {
-    const welcomeText = "Hello there, my name is Kiki the Rabbit, What's Your Name?";
+    const welcomeText = "Hello there, my name is Kiki the Rabbit , Whats Your Name?";
     let welcomeUtterance = new SpeechSynthesisUtterance(welcomeText);
 
     // Set voice to a female voice or adjust pitch/rate for effect
@@ -276,29 +291,12 @@ function welcomeUser() {
     welcomeUtterance.voice = femaleVoice;
     welcomeUtterance.pitch = 1.2; // Slightly higher pitch
     welcomeUtterance.rate = 1.0;   // Normal speaking rate
-
     document.getElementById('welcome-button').style.display = 'none';
-    document.getElementById('background-content').classList.remove('blurred-background');
 
     // Change to the chatbot interaction video when speaking starts
     welcomeUtterance.onstart = function () {
-        // Set up the video change with the loading check
-        const interactionVideoPath = 'video.mp4';
-        
-        // Change the video source and wait for it to load
-        videoCharacter.src = interactionVideoPath;
-
-        // Wait for the video to be ready before playing and changing the video
-        videoCharacter.addEventListener('canplaythrough', function onVideoReady() {
-            // Start playing the video and remove the event listener to avoid multiple triggers
-            changeVideo(interactionVideoPath);
-            isSpeaking = true; // Chatbot starts speaking
-
-            // Remove the listener once the video is ready
-            videoCharacter.removeEventListener('canplaythrough', onVideoReady);
-        });
-
-        videoCharacter.load(); // Load the new video
+        changeVideo('video.mp4'); // Change to the interaction video
+        isSpeaking = true; // Chatbot starts speaking
     };
 
     // Change back to the default video when speech ends
@@ -310,7 +308,6 @@ function welcomeUser() {
     // Start speaking the welcome message
     speechSynthesis.speak(welcomeUtterance);
 }
-
 
 // Add event listener to the welcome button
 document.getElementById('welcome-button').addEventListener('click', welcomeUser);
