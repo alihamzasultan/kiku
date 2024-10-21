@@ -40,16 +40,25 @@ function changeVideo(path) {
     // Fade out the current video
     videoCharacter.style.opacity = 0;
 
+    // Pause the video if it's currently playing
+    videoCharacter.pause();
+
     setTimeout(() => {
         // Change the video source after the fade-out
         videoCharacter.src = path;
         videoCharacter.load();  // Reload the video
-        videoCharacter.play();  // Play the new video
 
-        // Fade in the new video after changing the source
-        videoCharacter.style.opacity = 1;
+        // Wait for the video to be ready before playing and fading it in
+        videoCharacter.addEventListener('canplaythrough', function playNewVideo() {
+            videoCharacter.play();  // Play the new video
+            videoCharacter.style.opacity = 1;  // Fade in the new video
+
+            // Remove the event listener after it fires to avoid triggering multiple times
+            videoCharacter.removeEventListener('canplaythrough', playNewVideo);
+        });
     }, 300); // Adjust delay for a smoother transition (300ms)
 }
+
 
 // Load the default video on page load with looping enabled
 window.onload = function () {
