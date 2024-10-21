@@ -201,6 +201,8 @@
 
             <div class="video-wrapper" style="position: relative;">
                 <video id="video-character" preload="auto" muted>
+                    <source src="defa.mp4" type="video/mp4">
+                    <source src="video.mp4" type="video/mp4">
                     Your browser does not support HTML5 video.
                 </video>
         
@@ -277,18 +279,22 @@
             }
         }
 
-        const video = document.getElementById('video-character');
-        const loadingScreen = document.getElementById('loading-screen');
-        const chatbotContainer = document.querySelector('.chatbot-container');
+        document.addEventListener('DOMContentLoaded', function() {
+        var videoCharacter = document.getElementById('video-character');
+        var loadingScreen = document.getElementById('loading-screen');
 
-        // Wait for video to load
-        video.addEventListener('loadeddata', function() {
-            // Hide loading screen
-            loadingScreen.style.display = 'none';
-            
-            // Show chatbot container
-            chatbotContainer.style.opacity = '1';
+        // Listen for when the video is ready to play
+        videoCharacter.addEventListener('canplaythrough', function() {
+            loadingScreen.style.display = 'none';  // Hide the loading screen
+            videoCharacter.classList.add('fade-in');  // Fade in the video
         });
+
+        // Fallback if the video doesn't load properly within a certain time (e.g., 5 seconds)
+        setTimeout(function() {
+            loadingScreen.style.display = 'none';  // Hide the loading screen
+            videoCharacter.classList.add('fade-in');  // Fade in the video
+        }, 5000);  // Adjust the time if necessary
+    });
     </script>
     <script src="script.js"></script>
 </body>
